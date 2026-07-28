@@ -11,13 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements from either backend/requirements.txt or requirements.txt
-COPY backend/requirements.txt* requirements.txt* ./
+# Copy backend requirements and install dependencies
+COPY backend/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend application source code
-COPY backend/ ./
-COPY app/ ./app/
+# Copy backend source code into container working directory (/app)
+COPY backend/ .
 
 # Expose FastAPI port
 EXPOSE 8000

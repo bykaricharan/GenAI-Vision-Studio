@@ -11,11 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements from either backend/requirements.txt or requirements.txt
-COPY backend/requirements.txt* requirements.txt* ./
+# Copy requirements list and install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend application source code
+# Copy backend source code
 COPY . .
 
 # Expose FastAPI port
