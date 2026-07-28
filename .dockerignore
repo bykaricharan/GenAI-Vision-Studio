@@ -1,7 +1,11 @@
 node_modules
 dist
+dist-ssr
 .git
-.env
+.github
+.vscode
+.env*
 *.log
+chroma_db
 backend/chroma_db
-backend/.venv
+backend/.env
