@@ -1,20 +1,25 @@
-# Stage 1: Build React static assets using Node.js
-FROM node:20-alpine AS build
+FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci
+# Prevent Python from writing pyc files and buffering stdout/stderr
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-COPY . .
-RUN npm run build
+# Install system build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Stage 2: Serve static bundle using Nginx Alpine
-FROM nginx:alpine
+# Copy backend requirements and install dependencies
+COPY backend/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy backend application code
+COPY backend/ ./
 
-EXPOSE 80
+# Expose FastAPI port
+EXPOSE 8000
 
-CMD ["nginx", "-g", "daemon off;"]
+# Run FastAPI using Uvicorn (binds to Railway's $PORT)
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

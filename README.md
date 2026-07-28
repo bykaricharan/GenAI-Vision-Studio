@@ -1,6 +1,30 @@
-# GenAI Vision Studio – Enterprise AI Operations & Learning Platform
+# GenAI Vision Studio – Monorepo Architecture & Production Deployment
 
 **GenAI Vision Studio** is an interactive, enterprise-grade Generative AI learning and observability platform built using **React 18**, **TypeScript**, **FastAPI**, **LangChain**, **LangGraph**, **OpenAI GPT-4o**, **ChromaDB**, **Supabase**, and **LangSmith**.
+
+---
+
+## 🏗️ Monorepo Directory Structure
+
+```
+genai-vision-studio/
+├── src/                    # React 18 + TypeScript Frontend Source
+├── public/                 # Static Public Assets
+├── backend/                # Standalone FastAPI Python Backend Service
+│   ├── app/                # FastAPI Application Source Code
+│   ├── Dockerfile          # Backend Dockerfile Container Spec
+│   ├── requirements.txt    # Python Production Dependencies
+│   ├── .env.example        # Backend Environment Variables Template
+│   └── README.md           # Backend Service Documentation
+├── Dockerfile              # Root Dockerfile delegating to FastAPI Container
+├── railway.json            # Railway Monorepo Deployment Config
+├── vercel.json             # Vercel SPA Rewrite Route Config
+├── render.yaml             # Render Service Blueprint Config
+├── package.json            # Frontend Node.js Dependencies & Scripts
+├── tsconfig.json           # TypeScript Configuration
+├── vite.config.ts          # Vite Bundler & Path Alias Config
+└── README.md               # Main Project Documentation
+```
 
 ---
 
@@ -19,149 +43,58 @@
 
 ---
 
-## 🛠️ Technology Stack
+## 🚀 Production Deployment Guide
 
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS v4, Framer Motion, Lucide Icons, React Router v7.
-- **Backend API**: FastAPI, Uvicorn, Gunicorn, Pydantic v2, PyPDF, Python 3.11.
-- **AI Frameworks**: LangChain, LangGraph StateGraph, OpenAI GPT-4o (`text-embedding-3-small`).
-- **Vector Database**: ChromaDB (Persistent HNSW index).
-- **Relational Storage**: Supabase PostgreSQL DB.
-- **Observability**: LangSmith V2 Telemetry & LLM-as-a-Judge Evaluators.
+### Option 1: Monorepo Deployment (Vercel Frontend + Railway Backend)
 
----
+#### A. Deploy Backend to Railway
+Railway supports building the monorepo backend in two ways:
 
-## 🚀 Local Development Setup
+1. **Method 1 (Automatic via Root Dockerfile & `railway.json`)**:
+   - Push your repository to GitHub.
+   - On Railway, click **New Project** ➔ **Deploy from GitHub repo** ➔ Select `genai-vision-studio`.
+   - Railway automatically detects the root `Dockerfile` & `railway.json` and builds the Python FastAPI container using:
+     ```bash
+     uvicorn app.main:app --host 0.0.0.0 --port $PORT
+     ```
 
-### 1. Prerequisites
-- **Node.js**: `v18.0.0+`
-- **Python**: `v3.10+`
-- **Git**: Installed
+2. **Method 2 (Railway Root Directory Setting)**:
+   - In Railway Dashboard ➔ Project ➔ **Settings** ➔ **Root Directory**: Set to `/backend`.
+   - Railway will isolate the `/backend` folder, ignoring the root `package.json`, and deploy using `backend/Dockerfile`.
 
-### 2. Clone & Install Dependencies
+3. **Configure Environment Variables in Railway**:
+   - `OPENAI_API_KEY`: `sk-proj-...`
+   - `SUPABASE_URL`: `https://your-project.supabase.co`
+   - `SUPABASE_SERVICE_ROLE_KEY`: `your_key`
+   - `LANGCHAIN_API_KEY`: `ls-...`
+   - `CORS_ORIGINS`: `*`
+   - Copy your live backend URL (e.g. `https://genai-vision-studio-backend-production.up.railway.app`).
 
-```bash
-# Clone the repository
-git clone https://github.com/your-username/genai-vision-studio.git
-cd genai-vision-studio
-
-# Install Frontend Dependencies
-npm install
-
-# Install Backend Dependencies
-cd backend
-python -m venv venv
-# On Windows:
-venv\Scripts\activate
-# On Linux/macOS:
-source venv/bin/activate
-
-pip install -r requirements.txt
-cd ..
-```
-
-### 3. Environment Configuration
-
-1. **Frontend**: Create `.env` in the root directory:
-   ```env
-   VITE_API_BASE_URL=http://localhost:8000
-   ```
-
-2. **Backend**: Create `backend/.env` in the `backend/` directory:
-   ```env
-   PROJECT_NAME="GenAI Vision Studio API"
-   VERSION="1.0.0"
-   ENVIRONMENT="development"
-   HOST="0.0.0.0"
-   PORT=8000
-
-   # OpenAI Key (Required)
-   OPENAI_API_KEY=your_openai_api_key_here
-
-   # ChromaDB
-   CHROMA_PERSIST_DIRECTORY="./chroma_db"
-   CHROMA_COLLECTION_NAME="knowledge_studio"
-   EMBEDDING_MODEL="text-embedding-3-small"
-   EMBEDDING_DIMENSION=1536
-
-   # Supabase
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-
-   # LangSmith
-   LANGCHAIN_API_KEY=your_langsmith_api_key
-   LANGCHAIN_TRACING_V2=true
-   LANGCHAIN_PROJECT="GenAI Vision Studio"
-
-   # Allowed CORS Origins
-   CORS_ORIGINS="*"
-   ```
-
-### 4. Running Locally
-
-- **Start Backend FastAPI Server**:
-  ```bash
-  cd backend
-  uvicorn app.main:app --reload --port 8000
-  ```
-  *API documentation will be available at `http://localhost:8000/docs`.*
-
-- **Start Frontend React Vite Server**:
-  ```bash
-  # In root directory
-  npm run dev
-  ```
-  *Frontend will run at `http://localhost:5173`.*
+#### B. Deploy Frontend to Vercel
+1. Log in to [Vercel.com](https://vercel.com/) ➔ Click **Add New...** ➔ Select **Project**.
+2. Import your GitHub repository (`genai-vision-studio`).
+3. Set Environment Variable:
+   - `VITE_API_BASE_URL` = `https://genai-vision-studio-backend-production.up.railway.app`
+4. Click **Deploy**. Vercel will build the React app and serve it via CDN.
 
 ---
 
-## 🌐 Production Deployment Guide
+### Option 2: Standalone Backend Deployment
 
-### Phase 1: Push Repository to GitHub
+If you prefer to deploy the FastAPI backend as an isolated GitHub repository:
 
-1. Initialize git and commit all changes:
+1. Copy the `backend/` directory to a new folder outside the repository.
+2. Initialize git and push to a new GitHub repo (e.g., `genai-vision-studio-backend`):
    ```bash
+   cd backend
    git init
    git add .
-   git commit -m "feat: production ready GenAI Vision Studio"
+   git commit -m "feat: standalone FastAPI backend service"
    git branch -M main
-   git remote add origin https://github.com/your-username/genai-vision-studio.git
+   git remote add origin https://github.com/your-username/genai-vision-studio-backend.git
    git push -u origin main
    ```
-
----
-
-### Phase 2: Deploy Backend to Render
-
-1. Log in to **[Render.com](https://render.com/)**.
-2. Click **New +** ➔ Select **Blueprint**.
-3. Connect your GitHub repository (`genai-vision-studio`).
-4. Render will automatically detect `render.yaml`!
-5. In the Render Dashboard, navigate to your newly created Web Service ➔ **Environment**:
-   - Add `OPENAI_API_KEY` = `sk-...`
-   - Add `SUPABASE_URL` = `https://your-project.supabase.co`
-   - Add `SUPABASE_SERVICE_ROLE_KEY` = `your_key`
-   - Add `LANGCHAIN_API_KEY` = `ls-...`
-   - Add `CORS_ORIGINS` = `*` (or your Vercel URL)
-6. Click **Save Changes** and wait for deployment to complete.
-7. Copy your backend live URL (e.g. `https://genai-vision-studio-backend.onrender.com`).
-
----
-
-### Phase 3: Deploy Frontend to Vercel
-
-1. Log in to **[Vercel.com](https://vercel.com/)**.
-2. Click **Add New...** ➔ Select **Project**.
-3. Import your GitHub repository (`genai-vision-studio`).
-4. Configure Project Settings:
-   - **Framework Preset**: Vite
-   - **Root Directory**: `./` (Default)
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-5. Expand **Environment Variables**:
-   - Add `VITE_API_BASE_URL` = `https://genai-vision-studio-backend.onrender.com`
-6. Click **Deploy**.
-7. Vercel will automatically build the React SPA and serve it via global CDN with single-page routing (configured in `vercel.json`).
+3. Connect Railway or Render directly to `genai-vision-studio-backend`.
 
 ---
 
@@ -169,12 +102,12 @@ cd ..
 
 | Environment Variable | Service | Required | Purpose |
 | :--- | :--- | :---: | :--- |
-| `VITE_API_BASE_URL` | Frontend (Vercel) | Yes | Directs React API calls to Render FastAPI backend |
-| `OPENAI_API_KEY` | Backend (Render) | Yes | Ingestion embeddings and GPT-4o inference |
-| `SUPABASE_URL` | Backend (Render) | Yes | Cloud PostgreSQL endpoint for history & audit logs |
-| `SUPABASE_SERVICE_ROLE_KEY` | Backend (Render) | Yes | Service-role authentication key for database reads/writes |
-| `LANGCHAIN_API_KEY` | Backend (Render) | Optional | LangSmith trace logging & LLM-as-a-Judge evaluators |
-| `CORS_ORIGINS` | Backend (Render) | Yes | Restricts allowed origins for production API security |
+| `VITE_API_BASE_URL` | Frontend (Vercel) | Yes | Directs React API calls to Railway/Render FastAPI backend |
+| `OPENAI_API_KEY` | Backend (Railway) | Yes | Ingestion embeddings & GPT-4o inference |
+| `SUPABASE_URL` | Backend (Railway) | Yes | Cloud PostgreSQL endpoint for history & audit logs |
+| `SUPABASE_SERVICE_ROLE_KEY` | Backend (Railway) | Yes | Service-role authentication key for database reads/writes |
+| `LANGCHAIN_API_KEY` | Backend (Railway) | Optional | LangSmith trace logging & LLM-as-a-Judge evaluators |
+| `CORS_ORIGINS` | Backend (Railway) | Yes | Restricts allowed origins for production API security |
 
 ---
 
